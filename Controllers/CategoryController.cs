@@ -14,6 +14,9 @@ public class CategoryController : ControllerBase
     public async Task<IActionResult> GetAsync(
         [FromServices] BlogDataContext context)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(new ResultViewModel<Category>(ModelState.GetErrors()));
+
         try
         {
             var categories = await context.Categories.ToListAsync();
@@ -30,12 +33,15 @@ public class CategoryController : ControllerBase
         [FromServices] BlogDataContext context,
         [FromRoute] int id)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(new ResultViewModel<Category>(ModelState.GetErrors()));
+
         try
         {
             var category = await context.Categories.FirstOrDefaultAsync(x => x.Id == id);
 
             if (category == null)
-                return NotFound(new ResultViewModel<List<Category>>("ERRO-09 Conteúdo não encontrado"));
+                return NotFound(new ResultViewModel<List<Category>>($"ERRO-01 Não foi encontrada nenhuma categoria para o id = {id}"));
 
             return Ok(category);
         }
@@ -70,11 +76,11 @@ public class CategoryController : ControllerBase
         }
         catch (DbUpdateException ex)
         {
-            return StatusCode(500, "ERRO-01 Não foi possível incluir a categoria");
+            return StatusCode(500,new ResultViewModel<Category>("ERRO-02 Não foi possível incluir a categoria"));
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, "ERRO-02 Falha interna no servidor");
+            return StatusCode(500, "ERRO-00 Falha interna no servidor");
         }
     }
 
@@ -84,12 +90,15 @@ public class CategoryController : ControllerBase
         [FromBody] EditorCategoryViewModel model,
         [FromServices] BlogDataContext context)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(new ResultViewModel<Category>(ModelState.GetErrors()));
+
         try
         {
             var category = await context.Categories.FirstOrDefaultAsync(x => x.Id == id);
 
             if (category == null)
-                return NotFound();
+                return NotFound(new ResultViewModel<Category>($"ERRO-01 Não foi encontrada nenhuma categoria para o id = {id}"));
 
             category.Name = model.Name;
             category.Slug = model.Slug;
@@ -100,11 +109,11 @@ public class CategoryController : ControllerBase
         }
         catch (DbUpdateException ex)
         {
-            return StatusCode(500, "ERRO-03 Não foi possível alterar a categoria");
+            return StatusCode(500, new ResultViewModel<Category>("ERRO-03 Não foi possível alterar a categoria"));
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, "ERRO-04 Falha interna no servidor");
+            return StatusCode(500, "ERRO-00 Falha interna no servidor");
         }
     }
 
@@ -113,12 +122,15 @@ public class CategoryController : ControllerBase
         [FromRoute] int id,
         [FromServices] BlogDataContext context)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(new ResultViewModel<Category>(ModelState.GetErrors()));
+
         try
         {
             var category = await context.Categories.FirstOrDefaultAsync(x => x.Id == id);
 
             if (category == null)
-                return NotFound();
+                return StatusCode(404, new ResultViewModel<Category>($"ERRO-01 Não foi encontrada nenhuma categoria para o id = {id}"));
 
             context.Categories.Remove(category);
             await context.SaveChangesAsync();
@@ -127,11 +139,11 @@ public class CategoryController : ControllerBase
         }
         catch (DbUpdateException ex)
         {
-            return StatusCode(500, "ERRO-05 Não foi possível excluir a categoria");
+            return StatusCode(500, new ResultViewModel<Category>("ERRO-04 Não foi possível excluir a categoria"));
         }
-        catch (Exception ex)
+        catch
         {
-            return StatusCode(500, "ERRO-06 Falha interna no servidor");
+            return StatusCode(500, "ERRO-00 Falha interna no servidor");
         }
     }
 }
